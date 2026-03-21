@@ -1,0 +1,138 @@
+import asyncio
+import re
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+
+import site_parser
+import word_stemmer
+from config import BOT_TOKEN
+
+
+class Bot:
+    async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await update.message.reply_text(
+            "👋 Привет! Я бот-словарь сленга\n\n"
+            "📝 Отправь мне сообщение, и я найду в нем сленговые слова и дам их объяснения.\n\n"
+            "📚 Словарь содержит основные сленговые выражения.\n"
+            "🔍 Пример: 'Вчера был такой кринж, просто зашквар!'"
+        )
+
+    async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await update.message.reply_text(
+            "🤖 *Как пользоваться ботом:*\n\n"
+            "1. Просто отправь любое сообщение\n"
+            "2. Бот найдет все сленговые слова\n"
+            "3. Получишь их объяснения\n\n"
+            "*Команды:*\n"
+            "/start - приветствие\n"
+            "/help - эта справка\n"
+            "/stats - статистика словаря\n"
+            "/words - список всех слов\n\n"
+            "*Пример:*\n"
+            "«Вчера был кринж, просто хайп ловили!»",
+            parse_mode='Markdown'
+        )
+
+    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        stemmer = word_stemmer.Stemmer()
+
+        text = update.message.text.lower()
+        words = re.findall(r'\b[а-яёa-z]+\b', text, re.IGNORECASE)
+
+        found_words = {}
+        for word in words:
+            if word in SLANG_DICT:
+                found_words[word] = SLANG_DICT[word]
+            else:
+                # Приводим к корню
+                stem = stemmer.stem_russian(word)
+                if stem in SLANG_DICT:
+                    found_words[stem] = SLANG_DICT[stem]
+                else:
+                    # Поиск по вхождению
+                    for slang_word in SLANG_DICT:
+                        if len(slang_word) > 2 and slang_word in word:
+                            found_words[slang_word] = SLANG_DICT[slang_word]
+                            break
+
+        if not found_words:
+            await update.message.reply_text(
+                "😔 Сленговых слов не найдено\n\n"
+                "💡 Попробуй другие слова или напиши /words для просмотра словаря"
+            )
+            return
+
+        response = "🔍 *Найденные сленговые слова:*\n\n"
+        for word, definition in found_words.items():
+            response += f"• *{word}* — {definition}\n"
+
+        await update.message.reply_text(response, parse_mode='Markdown')
+
+    async def stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await update.message.reply_text(
+            f"📊 *Статистика словаря*\n\n"
+            f"📚 Всего слов: *{len(SLANG_DICT)}*\n"
+            f"🔤 Язык: русский\n"
+            f"📖 Источник: Илели, А. Толковый словарь русского молодёжного сленга / А. Илели, А. Федотова. – [Б. м.] : "
+            f"Tilda Publishing, 2025. – URL: https://slovar-slenga.tilda.ws/ (дата обращения: 20.03.2026).\n",
+            parse_mode='Markdown'
+        )
+
+    async def show_words(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        Показывает список всех слов в словаре
+        """
+        words_list = sorted(list(SLANG_DICT.keys()))
+
+        # Разбиваем на части по 50 слов
+        chunks = [words_list[i:i + 50] for i in range(0, len(words_list), 50)]
+
+        for i, chunk in enumerate(chunks):
+            response = f"📚 *Словарь сленга (часть {i + 1}/{len(chunks)}):*\n\n"
+            response += ", ".join([f"*{word}*" for word in chunk])
+
+            if i == 0:
+                response += "\n\n💡 Чтобы узнать значение слова, просто отправь его в чат!"
+
+            await update.message.reply_text(response, parse_mode='Markdown')
+
+    async def run(self):
+        """
+        Главная функция для запуска бота
+        """
+        parser = site_parser.Parser()
+        global SLANG_DICT
+
+        # Загружаем словарь
+        print("📚 Загрузка словаря...")
+        SLANG_DICT = parser.import_from_site()
+
+        print(f"✅ Готово")
+
+        # Токен бота (в файле конфигурации, скрытым по соображениям безопасности)
+        TOKEN = BOT_TOKEN
+
+        # Создаем приложение
+        application = Application.builder().token(TOKEN).build()
+
+        # Регистрируем обработчики
+        application.add_handler(CommandHandler("start", self.start))
+        application.add_handler(CommandHandler("help", self.help_command))
+        application.add_handler(CommandHandler("stats", self.stats))
+        application.add_handler(CommandHandler("words", self.show_words))
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
+
+        # Запускаем бота
+        print("🚀 Бот запущен...")
+        await application.initialize()
+        await application.start()
+        await application.updater.start_polling()
+
+        # Держим бота запущенным
+        try:
+            await asyncio.Event().wait()
+        except KeyboardInterrupt:
+            print("👋 Остановка бота...")
+            await application.updater.stop()
+            await application.stop()
+            await application.shutdown()
