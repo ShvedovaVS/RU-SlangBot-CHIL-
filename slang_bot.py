@@ -38,25 +38,29 @@ class Bot:
             parse_mode='Markdown'
         )
 
-    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        text = update.message.text.lower()
+    def find_words(self, text: str) -> dict:
+        text = text.lower()
         words = re.findall(r'\b[а-яёa-z]+\b', text, re.IGNORECASE)
 
         found_words = {}
+
         for word in words:
             if word in self.slang_dict:
                 found_words[word] = self.slang_dict[word]
             else:
-                # Приводим к корню
                 stem = self.stemmer.stem_russian(word)
                 if stem in self.slang_dict:
                     found_words[stem] = self.slang_dict[stem]
                 else:
-                    # Поиск по вхождению
                     for slang_word in self.slang_dict:
                         if len(slang_word) > 2 and slang_word in word:
                             found_words[slang_word] = self.slang_dict[slang_word]
                             break
+
+        return found_words
+
+    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        found_words = self.find_words(update.message.text)
 
         if not found_words:
             await update.message.reply_text(
@@ -103,11 +107,9 @@ class Bot:
         """
         Главная функция для запуска бота
         """
-        parser = site_parser.Parser()
-
         # Загружаем словарь
         print("📚 Загрузка словаря...")
-        self.slang_dict = self.parser.import_from_site()
+        self.slang_dict = self.parser.import_from_site() or {}
 
         print(f"✅ Готово")
 
