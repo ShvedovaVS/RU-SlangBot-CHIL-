@@ -9,6 +9,11 @@ from config import BOT_TOKEN
 
 
 class Bot:
+    def __init__(self):
+        self.slang_dict = {}
+        self.stemmer = word_stemmer.Stemmer()
+        self.parser = site_parser.Parser()
+
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "👋 Привет! Я бот-словарь сленга\n\n"
@@ -34,25 +39,23 @@ class Bot:
         )
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        stemmer = word_stemmer.Stemmer()
-
         text = update.message.text.lower()
         words = re.findall(r'\b[а-яёa-z]+\b', text, re.IGNORECASE)
 
         found_words = {}
         for word in words:
-            if word in SLANG_DICT:
-                found_words[word] = SLANG_DICT[word]
+            if word in self.slang_dict:
+                found_words[word] = self.slang_dict[word]
             else:
                 # Приводим к корню
-                stem = stemmer.stem_russian(word)
-                if stem in SLANG_DICT:
-                    found_words[stem] = SLANG_DICT[stem]
+                stem = self.stemmer.stem_russian(word)
+                if stem in self.slang_dict:
+                    found_words[stem] = self.slang_dict[stem]
                 else:
                     # Поиск по вхождению
-                    for slang_word in SLANG_DICT:
+                    for slang_word in self.slang_dict:
                         if len(slang_word) > 2 and slang_word in word:
-                            found_words[slang_word] = SLANG_DICT[slang_word]
+                            found_words[slang_word] = self.slang_dict[slang_word]
                             break
 
         if not found_words:
@@ -71,7 +74,7 @@ class Bot:
     async def stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"📊 *Статистика словаря*\n\n"
-            f"📚 Всего слов: *{len(SLANG_DICT)}*\n"
+            f"📚 Всего слов: *{len(self.slang_dict)}*\n"
             f"🔤 Язык: русский\n"
             f"📖 Источник: Илели, А. Толковый словарь русского молодёжного сленга / А. Илели, А. Федотова. – [Б. м.] : "
             f"Tilda Publishing, 2025. – URL: https://slovar-slenga.tilda.ws/ (дата обращения: 20.03.2026).\n",
@@ -82,7 +85,7 @@ class Bot:
         """
         Показывает список всех слов в словаре
         """
-        words_list = sorted(list(SLANG_DICT.keys()))
+        words_list = sorted(list(self.slang_dict.keys()))
 
         # Разбиваем на части по 50 слов
         chunks = [words_list[i:i + 50] for i in range(0, len(words_list), 50)]
@@ -101,11 +104,10 @@ class Bot:
         Главная функция для запуска бота
         """
         parser = site_parser.Parser()
-        global SLANG_DICT
 
         # Загружаем словарь
         print("📚 Загрузка словаря...")
-        SLANG_DICT = parser.import_from_site()
+        self.slang_dict = self.parser.import_from_site()
 
         print(f"✅ Готово")
 
