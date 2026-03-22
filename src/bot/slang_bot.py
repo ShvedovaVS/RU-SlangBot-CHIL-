@@ -5,7 +5,10 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 from bot import site_parser
 from bot import word_stemmer
-from bot.config import BOT_TOKEN
+try:
+    from bot.config import BOT_TOKEN
+except ImportError:
+    BOT_TOKEN = None
 
 
 class Bot:
