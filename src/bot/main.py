@@ -1,9 +1,9 @@
 import asyncio
 
-import slang_bot
+from bot.slang_bot import Bot
 
 if __name__ == "__main__":
-    bot = slang_bot.Bot()
+    bot = Bot()
 
     # Запускаем асинхронную функцию
     asyncio.run(bot.run())
