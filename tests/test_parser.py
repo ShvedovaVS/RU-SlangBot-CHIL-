@@ -1,16 +1,12 @@
-from bot.site_parser import Parser
+import pytest
 
 
+@pytest.mark.parser
 class TestParser:
 
-    def setup_method(self):
-        self.parser = Parser()
+    def test_empty_html(self, parser):
+        assert parser.parse_words_from_html("") == {}
 
-    def test_empty_html(self):
-        """Пустой HTML"""
-        assert self.parser.parse_words_from_html("") == {}
-
-    def test_no_words(self):
-        """HTML без слов"""
+    def test_no_words(self, parser):
         html = "<div>Просто текст</div>"
-        assert self.parser.parse_words_from_html(html) == {}
+        assert parser.parse_words_from_html(html) == {}
