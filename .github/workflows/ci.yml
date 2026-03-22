@@ -22,7 +22,10 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+          pip install pylint
 
       - name: Run tests
-        run: |
-          pytest
+        run: pytest
+
+      - name: Run pylint
+        run: pylint src/
