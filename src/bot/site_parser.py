@@ -8,7 +8,8 @@ from bs4 import BeautifulSoup
 
 class Parser:
     HEADERS = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                      'AppleWebKit/537.36'
     }
 
     URL = "https://slovar-slenga.tilda.ws/"
@@ -20,10 +21,9 @@ class Parser:
         soup = BeautifulSoup(html, 'html.parser')
         words_data = {}
 
-        text_blocks = soup.find_all('div', class_=re.compile(r't-text.*t-text_md'))
+        text_blocks = soup.find_all(
+            'div', class_=re.compile(r't-text.*t-text_md'))
         print(f"📑 Найдено блоков: {len(text_blocks)}")
-
-        total_found = 0
 
         for block in text_blocks:
             # Получаем HTML содержимое
@@ -56,7 +56,8 @@ class Parser:
                     current_meaning = []
 
                     # Ищем значение после жирного слова в той же строке
-                    rest = line.replace(f"<strong>{bold_match.group(1)}</strong>", "").strip()
+                    rest = line.replace(f"<strong>{bold_match.group(1)}"
+                                        f"</strong>", "").strip()
                     if rest:
                         # Убираем тире в начале
                         rest = re.sub(r'^[-–—]\s*', '', rest)

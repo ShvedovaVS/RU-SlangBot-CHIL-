@@ -1,7 +1,8 @@
 import asyncio
 import re
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import (Application, CommandHandler,
+                          MessageHandler, filters, ContextTypes)
 
 from bot import site_parser
 from bot import word_stemmer
@@ -20,12 +21,14 @@ class Bot:
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "👋 Привет! Я бот-словарь сленга\n\n"
-            "📝 Отправь мне сообщение, и я найду в нем сленговые слова и дам их объяснения.\n\n"
+            "📝 Отправь мне сообщение, и я найду в нем "
+            "сленговые слова и дам их объяснения.\n\n"
             "📚 Словарь содержит основные сленговые выражения.\n"
             "🔍 Пример: 'Вчера был такой кринж, просто зашквар!'"
         )
 
-    async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def help_command(self, update: Update,
+                           context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "🤖 *Как пользоваться ботом:*\n\n"
             "1. Просто отправь любое сообщение\n"
@@ -43,7 +46,8 @@ class Bot:
 
     def find_words(self, text: str) -> dict:
         text = text.lower()
-        words = re.findall(r'\b[а-яёa-z]+\b', text, re.IGNORECASE)
+        words = re.findall(r'\b[а-яёa-z]+\b',
+                           text, re.IGNORECASE)
 
         found_words = {}
 
@@ -57,18 +61,21 @@ class Bot:
                 else:
                     for slang_word in self.slang_dict:
                         if len(slang_word) > 2 and slang_word in word:
-                            found_words[slang_word] = self.slang_dict[slang_word]
+                            found_words[slang_word] = (
+                                self.slang_dict)[slang_word]
                             break
 
         return found_words
 
-    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def handle_message(self, update: Update,
+                             context: ContextTypes.DEFAULT_TYPE):
         found_words = self.find_words(update.message.text)
 
         if not found_words:
             await update.message.reply_text(
                 "😔 Сленговых слов не найдено\n\n"
-                "💡 Попробуй другие слова или напиши /words для просмотра словаря"
+                "💡 Попробуй другие слова или напиши "
+                "/words для просмотра словаря"
             )
             return
 
@@ -78,31 +85,40 @@ class Bot:
 
         await update.message.reply_text(response, parse_mode='Markdown')
 
-    async def stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def stats(self, update: Update,
+                    context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"📊 *Статистика словаря*\n\n"
             f"📚 Всего слов: *{len(self.slang_dict)}*\n"
             f"🔤 Язык: русский\n"
-            f"📖 Источник: Илели, А. Толковый словарь русского молодёжного сленга / А. Илели, А. Федотова. – [Б. м.] : "
-            f"Tilda Publishing, 2025. – URL: https://slovar-slenga.tilda.ws/ (дата обращения: 20.03.2026).\n",
+            f"📖 Источник: Илели, А. Толковый словарь "
+            f"русского молодёжного сленга / А. Илели, "
+            f"А. Федотова. – [Б. м.] : "
+            f"Tilda Publishing, 2025. – URL: "
+            f"https://slovar-slenga.tilda.ws/ "
+            f"(дата обращения: 20.03.2026).\n",
             parse_mode='Markdown'
         )
 
-    async def show_words(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def show_words(self, update: Update,
+                         context: ContextTypes.DEFAULT_TYPE):
         """
         Показывает список всех слов в словаре
         """
         words_list = sorted(list(self.slang_dict.keys()))
 
         # Разбиваем на части по 50 слов
-        chunks = [words_list[i:i + 50] for i in range(0, len(words_list), 50)]
+        chunks = [words_list[i:i + 50]
+                  for i in range(0, len(words_list), 50)]
 
         for i, chunk in enumerate(chunks):
-            response = f"📚 *Словарь сленга (часть {i + 1}/{len(chunks)}):*\n\n"
+            response = (f"📚 *Словарь сленга "
+                        f"(часть {i + 1}/{len(chunks)}):*\n\n")
             response += ", ".join([f"*{word}*" for word in chunk])
 
             if i == 0:
-                response += "\n\n💡 Чтобы узнать значение слова, просто отправь его в чат!"
+                response += ("\n\n💡 Чтобы узнать значение слова, "
+                             "просто отправь его в чат!")
 
             await update.message.reply_text(response, parse_mode='Markdown')
 
@@ -114,9 +130,10 @@ class Bot:
         print("📚 Загрузка словаря...")
         self.slang_dict = self.parser.import_from_site() or {}
 
-        print(f"✅ Готово")
+        print("✅ Готово")
 
-        # Токен бота (в файле конфигурации, скрытым по соображениям безопасности)
+        # Токен бота (в файле конфигурации,
+        # скрытым по соображениям безопасности)
         TOKEN = BOT_TOKEN
 
         # Создаем приложение
@@ -127,7 +144,8 @@ class Bot:
         application.add_handler(CommandHandler("help", self.help_command))
         application.add_handler(CommandHandler("stats", self.stats))
         application.add_handler(CommandHandler("words", self.show_words))
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
+        application.add_handler(MessageHandler(
+            filters.TEXT & ~filters.COMMAND, self.handle_message))
 
         # Запускаем бота
         print("🚀 Бот запущен...")
