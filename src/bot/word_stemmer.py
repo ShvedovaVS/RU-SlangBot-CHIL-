@@ -1,5 +1,5 @@
-class Stemmer:
-    def stem_russian(self, word):
+class Stemmer:  # pylint: disable=too-few-public-methods
+    def stem_russian(self, word: str) -> str:
         """Приводит слово к корневой форме"""
         word = word.lower()
 

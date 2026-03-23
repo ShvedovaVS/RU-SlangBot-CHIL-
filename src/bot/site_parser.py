@@ -1,6 +1,7 @@
 import random
 import re
 from time import sleep
+from typing import Optional
 
 import requests
 from bs4 import BeautifulSoup
@@ -14,9 +15,15 @@ class Parser:
 
     URL = "https://slovar-slenga.tilda.ws/"
 
-    def parse_words_from_html(self, html):
+    def parse_words_from_html(self, html: str) -> dict:
         """
         Парсит слова, сохраняя многострочные значения
+
+        Args:
+            html: HTML страницы
+
+        Returns:
+            dict: Словарь {слово: определение}
         """
         soup = BeautifulSoup(html, 'html.parser')
         words_data = {}
@@ -49,7 +56,7 @@ class Parser:
                     # Если уже собирали предыдущее слово - сохраняем
                     if current_word and current_meaning:
                         full_meaning = '\n'.join(current_meaning)
-                        words_data.update({current_word: full_meaning})
+                        words_data[current_word] = full_meaning
 
                     # Начинаем новое слово
                     current_word = bold_match.group(1).strip().lower()
@@ -73,31 +80,45 @@ class Parser:
             # Сохраняем последнее слово в блоке
             if current_word and current_meaning:
                 full_meaning = '\n'.join(current_meaning)
-                words_data.update({current_word: full_meaning})
+                words_data[current_word] = full_meaning
 
         print(f"📊 Всего найдено: {len(words_data)} слов")
         return words_data
 
-    def import_from_site(self):
+    def import_from_site(self) -> Optional[dict]:
+        """
+        Импортирует слова с сайта
+
+        Returns:
+            Optional[dict]: Словарь слов или None в случае ошибки
+        """
         with requests.Session() as session:
             session.headers.update(self.HEADERS)
             html = self.fetch_page_with_retry(session, self.URL)
 
             if not html:
                 print("❌ Не удалось загрузить сайт")
-                return
+                return None
 
             words = self.parse_words_from_html(html)
 
             if not words:
                 print("❌ Слова не найдены")
-                return
+                return None
 
             return words
 
-    def fetch_page_with_retry(self, session, url, max_retries=3):
+    def fetch_page_with_retry(self, session, url: str, max_retries: int = 3) -> Optional[str]:
         """
-        Загружает страницу
+        Загружает страницу с повторными попытками
+
+        Args:
+            session: requests.Session объект
+            url: URL страницы
+            max_retries: максимальное количество попыток
+
+        Returns:
+            Optional[str]: HTML страницы или None если не удалось загрузить
         """
         for attempt in range(max_retries):
             try:
@@ -109,6 +130,7 @@ class Parser:
                 with session.get(url, timeout=30) as response:
                     if response.status_code == 200:
                         return response.text
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 print(f"⚠️ Ошибка: {e}")
+
         return None
