@@ -1,6 +1,9 @@
 import asyncio
 
-from slang_bot import Bot
+try:
+    from .slang_bot import Bot
+except ImportError:
+    from slang_bot import Bot
 
 if __name__ == "__main__":
     bot = Bot()
