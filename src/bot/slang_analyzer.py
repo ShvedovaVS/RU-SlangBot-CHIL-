@@ -1,6 +1,7 @@
 import re
 
 
+# pylint: disable=too-few-public-methods
 class SlangAnalyzer:
     def __init__(self, slang_dict, stemmer):
         self.slang_dict = slang_dict
