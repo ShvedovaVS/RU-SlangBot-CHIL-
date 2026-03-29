@@ -147,7 +147,7 @@ Contains the `BOT_TOKEN` variable – the Telegram bot token obtained from [@Bot
   - `/start` → `start()` – welcome message
   - `/help` → `help_command()` – help information
   - `/stats` → `stats()` – dictionary statistics
-  - `/words` → `show_words()` – list of all words 
+  - `/words` → `show_words()` – list of all words
 
 ## Testing
 
