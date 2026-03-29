@@ -20,7 +20,7 @@ Telegram bot for automatic detection and explanation of Russian slang words. The
    pip install -r requirements.txt
    ```
    
-3. Create configuration file src/bot/config.py with your bot token:
+3. Create configuration file src/bot/config.py with your bot token: 
     ```python
    BOT_TOKEN = "your_telegram_bot_token_here"
    ```
