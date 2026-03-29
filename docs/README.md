@@ -47,7 +47,10 @@ Run the bot from the project root directory:
 
 The project follows an object-oriented, asynchronous, event-driven architecture. See [Architecture](ARCHITECTURE.md) for details.
 
-- **Bot class** (src/bot/slang_bot.py) - main logic, command handlers, slang search
+The project follows an object-oriented, asynchronous, event-driven architecture. See [Architecture](ARCHITECTURE.md) for details.
+
+- **Bot class** (src/bot/slang_bot.py) - main logic, command handlers, slang search coordination
+- **SlangAnalyzer class** (src/bot/slang_analyzer.py) - analyzes incoming text, detects slang words using dictionary lookup, stemming, and partial matching
 - **Stemmer class** (src/bot/word_stemmer.py) - Russian word stemming (removes prefixes, suffixes, endings)
 - **Parser class** (src/bot/site_parser.py) - loads and parses the slang dictionary from an external website
 - **Entry point** (src/bot/main.py) - creates the Bot instance and starts the async event loop

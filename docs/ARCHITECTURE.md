@@ -2,7 +2,7 @@
 
 ## Structure
 
-The project is divided into three main classes, each responsible for its own area.
+The project is divided into four main classes, each responsible for its own area.
 
 ## Modules and Classes
 
@@ -19,10 +19,11 @@ The main class containing all bot logic.
 - `slang_dict: dict[str, str]` – slang dictionary (word → definition)
 - `stemmer: Stemmer` – instance of the `Stemmer` class
 - `parser: Parser` – instance of the `Parser` class
-
+- `analyzer: SlangAnalyzer` – instance of the `SlangAnalyzer` class
+- 
 **Methods:**
 
-- `__init__()` – initialization, creates `Stemmer` and `Parser` instances
+- `__init__()` – initialization, creates `Stemmer`, `Parser`, and `SlangAnalyzer` instances
 - `find_words(text: str) -> dict` – searches for slang words in text
 - `async start(update, context)` – handler for `/start` command
 - `async help_command(update, context)` – handler for `/help` command
@@ -59,6 +60,30 @@ Responsible for loading and parsing the dictionary from an external website.
 - `fetch_page_with_retry(session, url, max_retries=3) -> str | None` – loads a page with retry logic
 - `parse_words_from_html(html: str) -> dict` – parses HTML and extracts words with definitions
 
+### `src/bot/slang_analyzer.py` – `SlangAnalyzer` Class
+
+Responsible for detecting slang words in user messages.
+
+Separates text-processing logic from Telegram command handling to improve modularity and maintainability.
+
+**Attributes:**
+
+- `slang_dict: dict[str, str]` – slang dictionary
+- `stemmer: Stemmer` – instance of the `Stemmer` class
+
+**Methods:**
+
+- `find_words(text: str) -> dict` – analyzes text and returns found slang words with definitions
+
+**Detection algorithm:**
+
+1. Converts text to lowercase
+2. Extracts words using regex
+3. Searches for:
+   - exact matches in the dictionary
+   - stem matches using `stem_russian()`
+   - partial matches inside longer words
+
 ### `src/bot/config.py` – Configuration
 
 Contains the `BOT_TOKEN` variable – the Telegram bot token obtained from [@BotFather](https://t.me/BotFather).
@@ -81,9 +106,9 @@ Contains the `BOT_TOKEN` variable – the Telegram bot token obtained from [@Bot
 │  + slang_dict : Dict                            │
 │  + stemmer : Stemmer                            │
 │  + parser : Parser                              │
+│  + analyzer : SlangAnalyzer                     │
 ├─────────────────────────────────────────────────┤
 │  + __init__()                                   │
-│  + find_words(text) : Dict                      │
 │  + start(update, context)                       │
 │  + help_command(update, context)                │
 │  + stats(update, context)                       │
@@ -94,22 +119,25 @@ Contains the `BOT_TOKEN` variable – the Telegram bot token obtained from [@Bot
                         │
                         │ contains
                         │
-        ┌───────────────┴───────────────┐
-        │                               │
-        ▼                               ▼
-┌─────────────────────────────────┐ ┌─────────────────────────────────┐
-│            Stemmer              │ │            Parser               │
-├─────────────────────────────────┤ ├─────────────────────────────────┤
-│                                 │ │  + HEADERS : Dict (class)       │
-├─────────────────────────────────┤ │  + URL : str (class)            │
-│  + stem_russian(word) : str     │ ├─────────────────────────────────┤
-│                                 │ │  + import_from_site()           │
-│                                 │ │    : Dict | None                │
-│                                 │ │  + fetch_page_with_retry()      │
-│                                 │ │    : str | None                 │
-│                                 │ │  + parse_words_from_html()      │
-│                                 │ │    : Dict                       │
-└─────────────────────────────────┘ └─────────────────────────────────┘
+        ┌───────────────┼───────────────┐
+        │               │               │
+        ▼               ▼               ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────────────┐
+│     Stemmer     │ │     Parser      │ │      SlangAnalyzer      │
+├─────────────────┤ ├─────────────────┤ ├─────────────────────────┤
+│                 │ │ + HEADERS: Dict │ │ + slang_dict : Dict     │
+│ + stem_russian  │ │ + URL: str      │ │ + stemmer : Stemmer     │
+│   (word) : str  │ ├─────────────────┤ ├─────────────────────────┤
+│                 │ │ + import_from_  │ │ + find_words(text): Dict│
+│                 │ │   site()        │ │                         │
+│                 │ │   : Dict | None │ │                         │
+│                 │ │ + fetch_page_   │ │                         │
+│                 │ │   with_retry()  │ │                         │
+│                 │ │   : str | None  │ │                         │
+│                 │ │ + parse_words_  │ │                         │
+│                 │ │   from_html()   │ │                         │
+│                 │ │   : Dict        │ │                         │
+└─────────────────┘ └─────────────────┘ └─────────────────────────┘
 ```
 ## Component Interaction
 
@@ -128,7 +156,7 @@ Contains the `BOT_TOKEN` variable – the Telegram bot token obtained from [@Bot
 - User sends a message
 - Telegram API passes the event to the bot
 - `MessageHandler` calls `handle_message()`
-- `handle_message()` passes the text to `find_words()`
+- `handle_message()` passes the text to `SlangAnalyzer.find_words()`
 - `find_words()`:
   - Converts text to lowercase
   - Extracts individual words using `re.findall()`
