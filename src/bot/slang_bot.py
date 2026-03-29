@@ -6,8 +6,8 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 # pylint: enable=import-error, no-name-in-module
 
-import site_parser
-import word_stemmer
+from .site_parser import Parser
+from .word_stemmer import Stemmer
 
 try:
     from config import BOT_TOKEN
@@ -18,8 +18,8 @@ except ImportError:
 class Bot:
     def __init__(self):
         self.slang_dict = {}
-        self.stemmer = word_stemmer.Stemmer()
-        self.parser = site_parser.Parser()
+        self.stemmer = Stemmer()
+        self.parser = Parser()
 
     async def start(self, update: Update, _context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
