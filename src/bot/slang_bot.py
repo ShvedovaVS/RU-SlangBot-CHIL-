@@ -10,7 +10,7 @@ import site_parser
 import word_stemmer
 
 try:
-    from bot.config import BOT_TOKEN
+    from config import BOT_TOKEN
 except ImportError:
     BOT_TOKEN = None
 
