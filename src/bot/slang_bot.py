@@ -1,13 +1,13 @@
 import asyncio
+import re
 
 # pylint: disable=import-error, no-name-in-module
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 # pylint: enable=import-error, no-name-in-module
 
-from bot.site_parser import Parser
-from bot.word_stemmer import Stemmer
-from bot.slang_analyzer import SlangAnalyzer
+import site_parser
+import word_stemmer
 
 try:
     from bot.config import BOT_TOKEN
@@ -18,9 +18,8 @@ except ImportError:
 class Bot:
     def __init__(self):
         self.slang_dict = {}
-        self.stemmer = Stemmer()
-        self.parser = Parser()
-        self.analyzer = None
+        self.stemmer = word_stemmer.Stemmer()
+        self.parser = site_parser.Parser()
 
     async def start(self, update: Update, _context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
@@ -47,9 +46,31 @@ class Bot:
             parse_mode='Markdown'
         )
 
+    def find_words(self, text: str) -> dict:
+        text = text.lower()
+        words = re.findall(r'\b[а-яёa-z]+\b',
+                           text, re.IGNORECASE)
+
+        found_words = {}
+
+        for word in words:
+            if word in self.slang_dict:
+                found_words[word] = self.slang_dict[word]
+            else:
+                stem = self.stemmer.stem_russian(word)
+                if stem in self.slang_dict:
+                    found_words[stem] = self.slang_dict[stem]
+                else:
+                    for slang_word, definition in self.slang_dict.items():
+                        if len(slang_word) > 2 and slang_word in word:
+                            found_words[slang_word] = definition
+                            break
+
+        return found_words
+
     async def handle_message(self, update: Update,
                              _context: ContextTypes.DEFAULT_TYPE):
-        found_words = self.analyzer.find_words(update.message.text)
+        found_words = self.find_words(update.message.text)
 
         if not found_words:
             await update.message.reply_text(
@@ -109,8 +130,6 @@ class Bot:
         self.slang_dict = self.parser.import_from_site() or {}
 
         print("✅ Готово")
-
-        self.analyzer = SlangAnalyzer(self.slang_dict, self.stemmer)
 
         # Токен бота
         token = BOT_TOKEN  # pylint: disable=invalid-name

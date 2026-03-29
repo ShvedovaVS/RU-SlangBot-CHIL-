@@ -1,6 +1,6 @@
 import asyncio
 
-from bot.slang_bot import Bot
+from slang_bot import Bot
 
 if __name__ == "__main__":
     bot = Bot()
